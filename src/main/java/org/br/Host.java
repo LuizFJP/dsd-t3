@@ -32,38 +32,23 @@ public class Host extends Thread {
     @Override
     public void run() {
         connectToServer();
-        notifyIps();
+        try {
+            readMessage();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public void notifyIps() {
-        while (true) {
-            try {
-                Socket connection = server.accept();
+    public void readMessage() throws IOException {
+        ServerSocket server = new ServerSocket(176);
+       var receiveMessage = new ReceiveMessage(server, this::handleMessage);
 
-                input = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                output = new PrintWriter(connection.getOutputStream(), true);
-
-                System.out.println("Recebendo mensagem");
-
-                requestReceived = input.readLine();
-
-                ipList = Collections.singletonList(requestReceived);
-
-                connection.close();
-
-            } catch (Exception e) {
-                output.print("Server fechou");
-                try {
-                    server.close();
-                } catch (IOException ex) {
-                    throw new RuntimeException(ex);
-                }
-            }
-        }
 // linha que ele recebe os valores do servidor
 //        linha que ele adiciona a list de ips
 //        chama o metodo start()
     }
+
+    public void handleMessage(String message) {}
 
     public void connectToServer() {
             try (Socket conn = new Socket("localhost", 175)) {

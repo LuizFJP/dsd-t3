@@ -1,5 +1,8 @@
 package org.br;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.br.models.Machine;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -8,20 +11,24 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Server extends Thread {
-    ServerSocket server = new ServerSocket(175);
+    ServerSocket server;
+    private final int selfPort;
     String requestReceived;
-    String[] requestToServer;
+    int counter = 0;
+    ObjectMapper mapper = new ObjectMapper();
 
     BufferedReader input;
     PrintWriter output;
 
-    private List<String> ipList = new ArrayList<>();
+    private List<Machine> machineList = new ArrayList<>();
 
-    public Server() throws IOException {
+    public Server(int selfPort) throws IOException {
+        this.selfPort = selfPort;
+        this.server = new ServerSocket(selfPort);
     }
 
     @Override
@@ -34,7 +41,7 @@ public class Server extends Thread {
     }
 
     public void initServer() throws IOException {
-
+        machineList.add(new Machine(selfPort, server.getInetAddress().getHostAddress()));
         server.setReuseAddress(true);
 
         System.out.println("Server iniciado");
@@ -49,14 +56,19 @@ public class Server extends Thread {
                 System.out.println("Recebendo mensagem");
 
                 requestReceived = input.readLine();
-
-                ipList.add(requestReceived);
-                sendMessage();
-
-                requestToServer = requestReceived.split(";");
+                var requestToServer = requestReceived.split(";");
+                System.out.println("mensagem recebida pelo servidor: " + requestToServer[0]);
+                if (requestReceived.contains("Machine")) {
+                    var machine = Machine.fromString(requestReceived);
+                    machineList.add(machine);
+                } else {
+                    counter += Integer.parseInt(List.of(requestToServer).get(0));
+                    System.out.println(List.of(requestToServer).get(1));
+                }
 
                 connection.close();
-                if (ipList.size() == 5) {
+                System.out.println(machineList.size());
+                if (machineList.size() == 6) {
                     sendMessage();
                 }
             } catch (Exception e) {
@@ -67,16 +79,19 @@ public class Server extends Thread {
     }
 
     private void sendMessage() {
-        for (String ip : ipList) {
-            try (Socket conn = new Socket("127.0.0.1", 176)) {
+        for (int i = 1; i < machineList.size(); i++) {
+            try (Socket conn = new Socket(machineList.get(i).getHost(), machineList.get(i).getPort())) {
 
-                System.out.println("Conex�o estabelecida.");
+                System.out.println("retornando lista de ips e hosts para: ." + machineList.get(i).getHost() + ":" + machineList.get(i).getPort());
                 PrintWriter out = new PrintWriter(conn.getOutputStream(), true);
 
-//                out.println(ipList);
-                out.println(Arrays.asList("chegou", "mensagem"));
+                String listAsString = machineList.stream()
+                        .map(Machine::toString) // Assuming Machine has a meaningful toString() implementation
+                        .collect(Collectors.joining(";"));
+
+                out.println(listAsString);
             } catch (UnknownHostException e) {
-                System.out.println("host n�o encontrado");
+                System.out.println("host não encontrado");
                 e.printStackTrace();
             } catch (IOException e) {
                 throw new RuntimeException(e);

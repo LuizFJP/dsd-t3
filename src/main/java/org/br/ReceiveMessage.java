@@ -3,9 +3,9 @@ package org.br;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.List;
 
 public class ReceiveMessage extends Thread {
     ServerSocket server;
@@ -32,12 +32,11 @@ public class ReceiveMessage extends Thread {
                 Socket connection = server.accept();
 
                 input = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-
                 System.out.println("Recebendo mensagem");
 
                 var requestReceived = input.readLine();
-
-                callBack.onMessageReceived(requestReceived);
+                var requestToServer = requestReceived.split(";");
+                callBack.onMessageReceived(List.of(requestToServer));
 
                 connection.close();
             } catch (Exception e) {
@@ -46,7 +45,8 @@ public class ReceiveMessage extends Thread {
         }
     }
 
+
     public interface MessageCallback {
-        void onMessageReceived(String message);
+        void onMessageReceived(List<String> message) throws IOException;
     }
 }

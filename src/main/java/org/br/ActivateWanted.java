@@ -24,14 +24,14 @@ public class ActivateWanted extends Thread {
     }
 
     public void init() {
+        Scanner scanner = new Scanner(System.in);
         while (true) {
-            Scanner scanner = new Scanner(System.in);
             var input = scanner.next();
             System.out.println("host com a porta: " + input + " pediu para entrar em wanted");
             stateCallback.changeStateToWanted(input);
-
         }
     }
+
 
 
     public interface StateCallback {

@@ -32,10 +32,11 @@ public class ReceiveMessage extends Thread {
                 Socket connection = server.accept();
 
                 input = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                System.out.println("Recebendo mensagem");
 
                 var requestReceived = input.readLine();
                 var requestToServer = requestReceived.split(";");
+
+                System.out.println("Recebendo mensagem : host, request recebida:" + List.of(requestToServer));
                 callBack.onMessageReceived(List.of(requestToServer));
 
                 connection.close();

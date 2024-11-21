@@ -30,11 +30,11 @@ public class SendMessage {
     public void execute(String message) throws IOException {
         try (Socket conn = new Socket(host, port)) {
 
-            output = new PrintWriter(conn.getOutputStream(), true);
-            output.println(message);
+            this.output = new PrintWriter(conn.getOutputStream(), true);
+            this.output.println(message);
 
         } catch (Exception e) {
-            output.print("Server fechou");
+            this.output.print("Server fechou");
             server.close();
         }
     }

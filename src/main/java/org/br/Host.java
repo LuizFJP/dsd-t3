@@ -28,6 +28,7 @@ public class Host extends Thread {
         clock = new LamportClock();
         this.selfPort = selfPort;
         this.server = new ServerSocket(selfPort);
+        server.setReuseAddress(true);
     }
 
     @Override
@@ -54,24 +55,44 @@ public class Host extends Thread {
     }
 
     public void handleMessage(List<String> message) throws IOException {
+        System.out.println("host:" + this.selfPort +" message: " + message );
+        System.out.println("Tamanho da mensagem: " + message.size());
         if (message.size() == 6) {
+            System.out.println("Processando lista de máquinas recebida...");
             machineList = message.stream().map(Machine::fromString)
                     .collect(Collectors.toCollection(ArrayList::new));
-        } else {
-            var hostMetaData = HostMetaData.fromString(message.get(0));
+        } else if (message.size() > 0 && message.get(0).equals("OK")) {
+            System.out.println("Mensagem OK identificada.");
+            okCount++;
+            System.out.println("Contador de OKs: " + okCount);
 
-            if (hostMetaData.requestType.equals(RequestType.REQUEST)) {
-                robson(hostMetaData);
-            } else {
-                okCount++;
-            }
+            System.out.println(machineList.size() - 1);
+            System.out.println(okCount == machineList.size() - 2);
+//            System.out.println(machineList);
 
-            if (okCount == 4) {
+            if (okCount == machineList.size() - 2){
+                System.out.println("Entrando na região crítica...");
+                System.out.println(hostMetadataList);
+                System.out.println(message.get(0));
                 this.state = Afonso.HELD;
-                var sendMessage = new SendMessage(hostMetadataList.get(0).ip, hostMetadataList.get(0).port, this.server);
-                sendMessage.execute("1" + "," + selfIp); // seção critica
+                var sendMessage = new SendMessage(
+                        machineList.get(0).getHost(),
+                        machineList.get(0).getPort(),
+                        this.server);
+
+                System.out.println("Criado SendMessage");
+                sendMessage.execute("1" + ";" + selfIp);
+//                var response = false;
+//                while(!response){
+//
+//                }
+                System.out.println("Passou do execute");
                 okCount = 0;
+                System.out.println("Saindo da região crítica...");
+
+                System.out.println(clock.getClock());
                 this.state = Afonso.RELEASED;
+                System.out.println(this.state);
                 for (int i = 0; !hostMetadataList.isEmpty(); i++) {
                     clock.increment();
                     sendMessage.setHost(hostMetadataList.get(i).ip);
@@ -79,6 +100,17 @@ public class Host extends Thread {
                     hostMetadataList.remove(i);
                 }
             }
+        } else {
+            System.out.println("Mensagem recebida.");
+            var hostMetaData = HostMetaData.fromString(message.get(0));
+            System.out.println(hostMetaData);
+
+            System.out.println(hostMetaData.requestType.equals(RequestType.REQUEST));
+            System.out.println(RequestType.REQUEST);
+            System.out.println(hostMetaData.requestType);
+
+            robson(hostMetaData);
+
         }
     }
 
@@ -115,6 +147,7 @@ public class Host extends Thread {
     }
 
     public void requestAccess(String ip) throws IOException {
+        System.out.println("Lista de máquinas: " + this.machineList);
         if (ip.equals(Integer.toString(selfPort))) {
             this.state = Afonso.WANTED;
             var thisHostMetadata = new HostMetaData(this.selfIp, this.selfPort, this.clock.getClock(), RequestType.REQUEST);

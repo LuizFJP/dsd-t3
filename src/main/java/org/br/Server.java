@@ -53,7 +53,7 @@ public class Server extends Thread {
                 input = new BufferedReader(new InputStreamReader(connection.getInputStream()));
                 output = new PrintWriter(connection.getOutputStream(), true);
 
-                System.out.println("Recebendo mensagem");
+                System.out.println("Recebendo mensagem : server");
 
                 requestReceived = input.readLine();
                 var requestToServer = requestReceived.split(";");
@@ -62,13 +62,16 @@ public class Server extends Thread {
                     var machine = Machine.fromString(requestReceived);
                     machineList.add(machine);
                 } else {
+                    System.out.println("Na região critica");
+                    System.out.println(List.of(requestToServer).get(0));
                     counter += Integer.parseInt(List.of(requestToServer).get(0));
-                    System.out.println(List.of(requestToServer).get(1));
+                    output.print("aaa");
+                    System.out.println(counter);
                 }
 
                 connection.close();
                 System.out.println(machineList.size());
-                if (machineList.size() == 6) {
+                if (machineList.size() == 6 && requestReceived.contains("Machine")) {
                     sendMessage();
                 }
             } catch (Exception e) {

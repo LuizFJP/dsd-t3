@@ -11,6 +11,8 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class Host extends Thread {
@@ -34,7 +36,7 @@ public class Host extends Thread {
     @Override
     public void run() {
         connectToServer();
-        ActivateWanted activateWanted = ActivateWanted.getInstance((port) -> {
+        var activateWanted = new ActivateWanted((port) -> {
             try {
                 requestAccess(port);
             } catch (IOException e) {
@@ -43,15 +45,20 @@ public class Host extends Thread {
         });
 
         try {
+            activateWanted.start();
+            activateWanted.join();
             readMessage();
         } catch (IOException e) {
             throw new RuntimeException(e);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(Host.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
-    public void readMessage() throws IOException {
+    public void readMessage() throws IOException, InterruptedException {
         var receiveMessage = new ReceiveMessage(this.server, this::handleMessage);
         receiveMessage.start();
+        receiveMessage.join();
     }
 
     public void handleMessage(List<String> message) throws IOException {
@@ -81,11 +88,8 @@ public class Host extends Thread {
                         this.server);
 
                 System.out.println("Criado SendMessage");
-                sendMessage.execute("1" + ";" + selfIp);
-//                var response = false;
-//                while(!response){
-//
-//                }
+                sendMessage.executeAndWait("1" + ";" + selfIp);
+
                 System.out.println("Passou do execute");
                 okCount = 0;
                 System.out.println("Saindo da região crítica...");

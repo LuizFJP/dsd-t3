@@ -1,6 +1,5 @@
 package org.br;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.br.models.Machine;
 
 import java.io.BufferedReader;
@@ -19,7 +18,6 @@ public class Server extends Thread {
     private final int selfPort;
     String requestReceived;
     int counter = 0;
-    ObjectMapper mapper = new ObjectMapper();
 
     BufferedReader input;
     PrintWriter output;
